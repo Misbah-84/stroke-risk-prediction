@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StrokeRisk AI — Predictive Screening &amp; Clinical RAG Assistant</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ─── RESET & BASE ───────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-root:        #f0f4f9;
+      --bg-panel:       #ffffff;
+      --bg-card:        #f7f9fc;
+      --bg-input:       #f0f4f9;
+      --border:         #d1dce8;
+      --border-soft:    #e2eaf3;
+      --accent-blue:    #2563eb;
+      --accent-cyan:    #0891b2;
+      --accent-blue-dk: #1d4ed8;
+      --clr-low:        #059669;
+      --clr-low-bg:     #ecfdf5;
+      --clr-low-bd:     #a7f3d0;
+      --clr-mod:        #d97706;
+      --clr-mod-bg:     #fffbeb;
+      --clr-mod-bd:     #fde68a;
+      --clr-high:       #dc2626;
+      --clr-high-bg:    #fef2f2;
+      --clr-high-bd:    #fecaca;
+      --txt-primary:    #0f172a;
+      --txt-secondary:  #475569;
+      --txt-muted:      #94a3b8;
+      --radius:         10px;
+      --radius-sm:      7px;
+      --font:           'Sora', sans-serif;
+      --mono:           'JetBrains Mono', monospace;
+      --transition:     150ms ease;
+    }
+
+    html, body {
+      background: var(--bg-root);
+      color: var(--txt-primary);
+      font-family: var(--font);
+      font-size: 14px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ─── LAYOUT WRAPPER ─────────────────────────────────── */
+    .app-shell {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 0 20px 40px;
+    }
+
+    /* ─── MASTHEAD ───────────────────────────────────────── */
+    .masthead {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 18px 0 16px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+    .masthead-icon {
+      width: 44px; height: 44px;
+      border-radius: 11px;
+      background: linear-gradient(135deg, var(--accent-blue-dk), var(--accent-cyan));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; flex-shrink: 0;
+    }
+    .masthead-title {
+      font-size: 18px; font-weight: 700;
+      letter-spacing: -0.3px; color: var(--txt-primary);
+    }
+    .masthead-title span { color: var(--accent-blue); }
+    .masthead-sub {
+      font-size: 11px; color: var(--txt-muted); margin-top: 2px;
+    }
+    .masthead-badges {
+      margin-left: auto;
+      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    }
+    .badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 11px; padding: 4px 10px; border-radius: 999px;
+      border: 1px solid; font-weight: 500; letter-spacing: 0.4px;
+    }
+    .badge-online {
+      background: var(--clr-low-bg); color: var(--clr-low);
+      border-color: var(--clr-low-bd);
+    }
+    .badge-rag {
+      background: var(--bg-card); color: var(--txt-muted);
+      border-color: var(--border);
+    }
+    .badge-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: currentColor;
+      animation: pulse-dot 2s ease infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.4; }
+    }
+
+    /* ─── SPLIT LAYOUT ───────────────────────────────────── */
+    .split {
+      display: grid;
+      grid-template-columns: minmax(0, 2fr) minmax(0, 2.8fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    /* ─── PANELS ─────────────────────────────────────────── */
+    .panel {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px;
+      box-shadow: 0 1px 4px rgba(15,23,42,0.06), 0 4px 16px rgba(15,23,42,0.04);
+    }
+    .panel-header { margin-bottom: 16px; }
+    .panel-title {
+      font-size: 14px; font-weight: 600;
+      color: var(--txt-primary); margin-bottom: 3px;
+      display: flex; align-items: center; gap: 7px;
+    }
+    .panel-title-icon {
+      width: 28px; height: 28px; border-radius: 7px;
+      background: var(--bg-card); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; flex-shrink: 0;
+    }
+    .panel-sub { font-size: 11px; color: var(--txt-muted); }
+
+    /* ─── FORM ELEMENTS ──────────────────────────────────── */
+    .form-block { margin-bottom: 16px; }
+    .field-label {
+      font-size: 10.5px; font-weight: 600;
+      letter-spacing: 1px; text-transform: uppercase;
+      color: var(--txt-muted); margin-bottom: 7px;
+      display: flex; justify-content: space-between;
+    }
+    .field-label span { color: var(--txt-secondary); font-family: var(--mono); font-weight: 400; }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%; height: 4px;
+      background: var(--border);
+      border-radius: 2px; outline: none;
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: var(--accent-cyan);
+      border: 2px solid #ffffff;
+      box-shadow: 0 0 0 1px var(--accent-cyan);
+      cursor: pointer;
+      transition: transform var(--transition);
+    }
+    input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+    input[type="range"]::-moz-range-thumb {
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: var(--accent-cyan);
+      border: 2px solid var(--bg-root);
+      cursor: pointer;
+    }
+
+    input[type="number"] {
+      width: 100%; padding: 9px 12px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--txt-primary);
+      font-family: var(--mono); font-size: 13px;
+      outline: none; transition: border-color var(--transition);
+    }
+    input[type="number"]:focus { border-color: var(--accent-cyan); }
+
+    .row-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    .radio-group { display: flex; gap: 6px; margin-top: 6px; }
+    .radio-btn {
+      flex: 1; padding: 7px 0; text-align: center;
+      background: var(--bg-input); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); font-size: 12px;
+      color: var(--txt-secondary); cursor: pointer;
+      transition: all var(--transition); user-select: none;
+    }
+    .radio-btn:hover { border-color: var(--txt-muted); }
+    .radio-btn.active {
+      background: rgba(6, 182, 212, 0.08);
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan); font-weight: 600;
+    }
+
+    /* ─── SUBMIT BUTTON ──────────────────────────────────── */
+    .btn-submit {
+      width: 100%; padding: 11px 18px; margin-top: 4px;
+      background: linear-gradient(135deg, var(--accent-blue-dk), var(--accent-cyan));
+      border: none; border-radius: var(--radius);
+      color: #fff; font-family: var(--font);
+      font-size: 13px; font-weight: 600; letter-spacing: 0.3px;
+      cursor: pointer; display: flex; align-items: center;
+      justify-content: center; gap: 7px;
+      transition: opacity var(--transition), transform var(--transition);
+    }
+    .btn-submit:hover { opacity: 0.9; }
+    .btn-submit:active { transform: scale(0.98); }
+    .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ─── DIVIDER ─────────────────────────────────────────── */
+    .divider {
+      border: none; border-top: 1px solid var(--border-soft);
+      margin: 18px 0;
+    }
+
+    /* ─── RESULTS SECTION ────────────────────────────────── */
+    .results { display: none; }
+    .results.show { display: block; animation: fadeUp 0.35s ease; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+    .metric-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 14px;
+    }
+    .metric-lbl {
+      font-size: 10px; font-weight: 600; letter-spacing: 1px;
+      text-transform: uppercase; color: var(--txt-muted); margin-bottom: 6px;
+    }
+    .metric-val {
+      font-size: 26px; font-weight: 700; font-family: var(--mono);
+      color: var(--txt-primary); line-height: 1;
+    }
+    .metric-sub { font-size: 11px; color: var(--txt-muted); margin-top: 4px; }
+
+    .alert {
+      padding: 11px 14px; border-radius: var(--radius);
+      font-size: 12.5px; margin-bottom: 14px;
+      border: 1px solid; line-height: 1.5;
+    }
+    .alert-high   { background: var(--clr-high-bg); border-color: var(--clr-high-bd); color: var(--clr-high); }
+    .alert-mod    { background: var(--clr-mod-bg);  border-color: var(--clr-mod-bd);  color: var(--clr-mod); }
+    .alert-low    { background: var(--clr-low-bg);  border-color: var(--clr-low-bd);  color: var(--clr-low); }
+
+    .vote-section-lbl {
+      font-size: 10.5px; font-weight: 600; letter-spacing: 1px;
+      text-transform: uppercase; color: var(--txt-muted); margin-bottom: 10px;
+    }
+    .vote-row { margin-bottom: 10px; }
+    .vote-meta {
+      display: flex; justify-content: space-between;
+      align-items: center; margin-bottom: 4px;
+    }
+    .vote-name { font-size: 11px; font-family: var(--mono); color: var(--txt-secondary); }
+    .vote-pct  { font-size: 11px; font-family: var(--mono); font-weight: 600; }
+    .progress-track {
+      background: var(--border); border-radius: 3px;
+      height: 5px; overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%; border-radius: 3px;
+      transition: width 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .note-text { font-size: 10.5px; color: var(--txt-muted); margin-top: 10px; line-height: 1.5; }
+
+    /* ─── RIGHT PANE ─────────────────────────────────────── */
+    .chat-disclaimer {
+      background: rgba(6, 182, 212, 0.04);
+      border-left: 2px solid rgba(6, 182, 212, 0.3);
+      padding: 9px 12px; border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      font-size: 11.5px; color: var(--txt-muted); margin-bottom: 14px;
+      line-height: 1.5;
+    }
+    .chat-disclaimer strong { color: var(--txt-secondary); }
+
+    .ctx-strip {
+      display: none; align-items: center; gap: 8px;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 7px 11px;
+      font-size: 11px; color: var(--txt-muted); margin-bottom: 10px;
+    }
+    .ctx-strip.show { display: flex; }
+    .ctx-icon { font-size: 13px; flex-shrink: 0; }
+
+    .chat-window {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 14px;
+      height: 380px; overflow-y: auto;
+      display: flex; flex-direction: column; gap: 10px;
+      margin-bottom: 10px;
+      scroll-behavior: smooth;
+    }
+    .chat-window::-webkit-scrollbar { width: 3px; }
+    .chat-window::-webkit-scrollbar-track { background: transparent; }
+    .chat-window::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    .bubble { max-width: 88%; padding: 10px 14px; border-radius: 10px; font-size: 12.5px; line-height: 1.65; }
+    .bubble-role { font-size: 9.5px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 5px; opacity: 0.6; }
+    .bubble-assistant {
+      align-self: flex-start;
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-left: 2px solid var(--accent-cyan);
+    }
+    .bubble-user {
+      align-self: flex-end;
+      background: rgba(59, 130, 246, 0.08);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      border-right: 2px solid var(--accent-blue);
+    }
+    .bubble-assistant .bubble-role { color: var(--accent-cyan); }
+    .bubble-user      .bubble-role { color: var(--accent-blue); }
+
+    .typing-indicator {
+      display: none; align-self: flex-start;
+      align-items: center; gap: 4px;
+      padding: 10px 14px;
+    }
+    .typing-indicator.show { display: flex; }
+    .typing-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--txt-muted);
+      animation: blink 1.2s ease infinite;
+    }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes blink {
+      0%, 80%, 100% { opacity: 0.2; }
+      40%           { opacity: 1;   }
+    }
+
+    .chat-input-row { display: flex; gap: 8px; }
+    .chat-input {
+      flex: 1; padding: 10px 14px;
+      background: var(--bg-input); border: 1px solid var(--border);
+      border-radius: var(--radius); color: var(--txt-primary);
+      font-family: var(--font); font-size: 13px; outline: none;
+      transition: border-color var(--transition);
+    }
+    .chat-input:focus { border-color: var(--accent-cyan); }
+    .chat-input::placeholder { color: var(--txt-muted); }
+    .btn-send {
+      padding: 10px 16px;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); color: var(--txt-secondary);
+      font-family: var(--font); font-size: 13px; cursor: pointer;
+      display: flex; align-items: center; gap: 6px;
+      transition: all var(--transition);
+    }
+    .btn-send:hover { border-color: var(--accent-cyan); color: var(--accent-cyan); }
+    .btn-send:active { transform: scale(0.97); }
+
+    /* ─── SPINNER ────────────────────────────────────────── */
+    .spinner {
+      display: inline-block; width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,0.2);
+      border-top-color: #fff; border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ─── FOOTER ─────────────────────────────────────────── */
+    .footer {
+      display: flex; justify-content: space-between; align-items: center;
+      border-top: 1px solid var(--border); margin-top: 20px;
+      padding-top: 12px; flex-wrap: wrap; gap: 8px;
+    }
+    .footer-left { font-size: 11px; color: var(--txt-muted); }
+    .footer-tags { display: flex; gap: 7px; flex-wrap: wrap; }
+    .tag {
+      font-size: 10.5px; font-family: var(--mono);
+      padding: 3px 9px; border-radius: 5px;
+      background: var(--bg-card); border: 1px solid var(--border);
+      color: var(--txt-muted);
+    }
+
+    /* ─── LOADING OVERLAY ────────────────────────────────── */
+    .loading-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(7, 11, 18, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 100; align-items: center; justify-content: center;
+    }
+    .loading-overlay.show { display: flex; }
+    .loading-box {
+      background: var(--bg-panel); border: 1px solid var(--border);
+      border-radius: 14px; padding: 28px 36px; text-align: center;
+    }
+    .loading-spinner-lg {
+      width: 40px; height: 40px; margin: 0 auto 14px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent-cyan); border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    .loading-txt { font-size: 13px; color: var(--txt-secondary); }
+    .loading-sub { font-size: 11px; color: var(--txt-muted); margin-top: 4px; }
+
+    /* ─── TOAST ──────────────────────────────────────────── */
+    .toast {
+      position: fixed; bottom: 24px; right: 24px;
+      background: var(--bg-panel); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 10px 16px;
+      font-size: 12.5px; color: var(--txt-secondary);
+      z-index: 200; transform: translateY(10px); opacity: 0;
+      transition: all 0.3s ease; pointer-events: none;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+
+    /* ─── RESPONSIVE ─────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .split { grid-template-columns: 1fr; }
+      .masthead-badges { display: none; }
+    }
+    @media (max-width: 480px) {
+      .app-shell { padding: 0 12px 30px; }
+      .panel { padding: 16px; }
+      .row-pair { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── LOADING OVERLAY ──────────────────────────────── -->
+<div class="loading-overlay" id="loading-overlay">
+  <div class="loading-box">
+    <div class="loading-spinner-lg"></div>
+    <div class="loading-txt" id="loading-txt">Running ensemble pipeline…</div>
+    <div class="loading-sub">SVM · Decision Tree · KNN</div>
+  </div>
+</div>
+
+<!-- ── TOAST NOTIFICATION ───────────────────────────── -->
+<div class="toast" id="toast"></div>
+
+<div class="app-shell">
+
+  <!-- MASTHEAD -->
+  <header class="masthead">
+    <div class="masthead-icon">🧠</div>
+    <div>
+      <div class="masthead-title">StrokeRisk <span>AI</span></div>
+      <div class="masthead-sub">Predictive Screening &amp; Clinical RAG Assistant &nbsp;·&nbsp; v1.0</div>
+    </div>
+    <div class="masthead-badges">
+      <span class="badge badge-online">
+        <span class="badge-dot"></span> System Online
+      </span>
+      <span class="badge badge-rag">RAG · ASA / WHO Guidelines</span>
+    </div>
+  </header>
+
+  <!-- SPLIT LAYOUT -->
+  <main class="split">
+
+    <!-- ══════════════════════════════════════════
+         LEFT PANE — Predictive Input Form
+    ══════════════════════════════════════════ -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <span class="panel-title-icon">📊</span>
+          Patient Diagnostics &amp; Screening
+        </div>
+        <div class="panel-sub">Enter clinical parameters to run the ensemble ML assessment.</div>
+      </div>
+
+      <!-- AGE -->
+      <div class="form-block">
+        <div class="field-label">
+          Age (years) <span id="age-val">45</span>
+        </div>
+        <input type="range" id="age" min="0" max="100" value="45" step="1"
+               oninput="document.getElementById('age-val').textContent=this.value" />
+      </div>
+
+      <!-- GLUCOSE -->
+      <div class="form-block">
+        <div class="field-label">Average Glucose Level (mg/dL)</div>
+        <input type="number" id="glucose" min="50" max="300" value="105.5" step="0.5" />
+      </div>
+
+      <!-- BMI -->
+      <div class="form-block">
+        <div class="field-label">
+          Body Mass Index (BMI) <span id="bmi-val">24.5</span>
+        </div>
+        <input type="range" id="bmi" min="10" max="60" value="24.5" step="0.5"
+               oninput="document.getElementById('bmi-val').textContent=(+this.value).toFixed(1)" />
+      </div>
+
+      <!-- HYPERTENSION + HEART DISEASE -->
+      <div class="row-pair">
+        <div class="form-block">
+          <div class="field-label">Hypertension</div>
+          <div class="radio-group">
+            <div class="radio-btn active" id="ht-no"  onclick="setRadio('ht','no')">No</div>
+            <div class="radio-btn"        id="ht-yes" onclick="setRadio('ht','yes')">Yes</div>
+          </div>
+        </div>
+        <div class="form-block">
+          <div class="field-label">Heart Disease History</div>
+          <div class="radio-group">
+            <div class="radio-btn active" id="hd-no"  onclick="setRadio('hd','no')">No</div>
+            <div class="radio-btn"        id="hd-yes" onclick="setRadio('hd','yes')">Yes</div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-submit" id="run-btn" onclick="runAssessment()">
+        ⚡ Run Stroke Risk Assessment
+      </button>
+
+      <hr class="divider" />
+
+      <!-- ── RESULTS (shown after assessment) ── -->
+      <div class="results" id="results">
+
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-lbl">Ensemble Risk Probability</div>
+            <div class="metric-val" id="prob-val">—</div>
+            <div class="metric-sub" id="prob-sub">—</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-lbl">Models Converged</div>
+            <div class="metric-val">3 / 3</div>
+            <div class="metric-sub">SVM · DT · KNN</div>
+          </div>
+        </div>
+
+        <div class="alert" id="result-alert"></div>
+
+        <div class="vote-section-lbl">Individual Model Confidence Breakdown</div>
+
+        <div class="vote-row">
+          <div class="vote-meta">
+            <span class="vote-name">SVM — Hyperplane Margin</span>
+            <span class="vote-pct" id="svm-pct">—</span>
+          </div>
+          <div class="progress-track"><div class="progress-bar" id="svm-bar" style="width:0%"></div></div>
+        </div>
+
+        <div class="vote-row">
+          <div class="vote-meta">
+            <span class="vote-name">Decision Tree — Rule Score</span>
+            <span class="vote-pct" id="dt-pct">—</span>
+          </div>
+          <div class="progress-track"><div class="progress-bar" id="dt-bar" style="width:0%"></div></div>
+        </div>
+
+        <div class="vote-row">
+          <div class="vote-meta">
+            <span class="vote-name">KNN — Distance Index</span>
+            <span class="vote-pct" id="knn-pct">—</span>
+          </div>
+          <div class="progress-track"><div class="progress-bar" id="knn-bar" style="width:0%"></div></div>
+        </div>
+
+        <p class="note-text">
+          * Probabilities represent per-model stroke likelihood estimates.
+          The ensemble output is their unweighted mean.
+        </p>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         RIGHT PANE — Clinical RAG Chatbot
+    ══════════════════════════════════════════ -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <span class="panel-title-icon">💬</span>
+          Context-Aware Clinical Assistant
+        </div>
+        <div class="panel-sub">Grounded in verified medical literature via RAG retrieval.</div>
+      </div>
+
+      <div class="chat-disclaimer">
+        ⚠ Answers are retrieved directly from official guidelines
+        (<strong>American Stroke Association / WHO</strong>) stored in the vector database.
+        This tool is for <strong>clinical decision support only</strong>
+        and does not replace physician judgment.
+      </div>
+
+      <!-- Context bridge indicator -->
+      <div class="ctx-strip" id="ctx-strip">
+        <span class="ctx-icon">🔗</span>
+        <span id="ctx-strip-txt">Patient risk context loaded — RAG pipeline has received this profile.</span>
+      </div>
+
+      <!-- Chat window -->
+      <div class="chat-window" id="chat-window">
+        <div class="bubble bubble-assistant">
+          <div class="bubble-role">Clinical Assistant</div>
+          Hello! I'm your <strong>Clinical RAG Assistant</strong>, powered by official guidelines
+          from the <strong>American Stroke Association</strong> and <strong>WHO</strong>.<br><br>
+          Run the stroke risk assessment on the left — I'll receive the patient's risk profile as
+          context and can answer follow-up questions about diagnosis, lifestyle interventions,
+          medication protocols, and prevention strategies, all grounded in verified clinical literature.
+        </div>
+      </div>
+
+      <div class="typing-indicator" id="typing">
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+      </div>
+
+      <div class="chat-input-row">
+        <input
+          class="chat-input"
+          id="chat-input"
+          type="text"
+          placeholder="Ask about diagnosis or prevention guidelines…"
+          onkeydown="if(event.key==='Enter') sendChat()"
+        />
+        <button class="btn-send" onclick="sendChat()">
+          ➤ Send
+        </button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <span class="footer-left">StrokeRisk AI &nbsp;·&nbsp; Built with Flask · Scikit-Learn · LangChain · ChromaDB</span>
+    <div class="footer-tags">
+      <span class="tag">SVM · DT · KNN Ensemble</span>
+      <span class="tag">ChromaDB / FAISS · LangChain</span>
+      <span class="tag">ASA · WHO Guidelines</span>
+    </div>
+  </footer>
+
+</div><!-- /app-shell -->
+
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════
+   STROKERISK AI — FRONTEND LOGIC
+   ─────────────────────────────────────────────────────────────────
+   BACKEND INTEGRATION POINTS are clearly marked with:
+     // ◆ BACKEND HOOK — replace this block with your real API call
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── APP STATE ────────────────────────────────────────────────────── */
+const appState = {
+  ht: 'no',
+  hd: 'no',
+  assessed: false,
+  riskResult: null     // Populated by runAssessment() — shared with chat context
+};
+
+const chatHistory = [];   // Stores { role, content } for full conversation context
+
+/* ── RADIO TOGGLE ─────────────────────────────────────────────────── */
+function setRadio(group, val) {
+  appState[group] = val;
+  ['no', 'yes'].forEach(v => {
+    document.getElementById(`${group}-${v}`)
+      .classList.toggle('active', v === val);
+  });
+}
+
+/* ── COLOUR UTILITIES ─────────────────────────────────────────────── */
+function riskColor(prob) {
+  if (prob >= 0.65) return 'var(--clr-high)';
+  if (prob >= 0.35) return 'var(--clr-mod)';
+  return 'var(--clr-low)';
+}
+function barColor(prob) {
+  if (prob >= 0.65) return '#ef4444';
+  if (prob >= 0.35) return '#f59e0b';
+  return '#10b981';
+}
+
+/* ── SET PROGRESS BAR ─────────────────────────────────────────────── */
+function setBar(barId, pctId, prob) {
+  const pct = Math.round(prob * 100);
+  const bar = document.getElementById(barId);
+  bar.style.width    = pct + '%';
+  bar.style.background = barColor(prob);
+  const lbl = document.getElementById(pctId);
+  lbl.textContent = pct + '%';
+  lbl.style.color = riskColor(prob);
+}
+
+/* ── TOAST ────────────────────────────────────────────────────────── */
+function showToast(msg, duration = 3000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+/* ── LOADING OVERLAY ──────────────────────────────────────────────── */
+function showLoading(msg) {
+  document.getElementById('loading-txt').textContent = msg;
+  document.getElementById('loading-overlay').classList.add('show');
+}
+function hideLoading() {
+  document.getElementById('loading-overlay').classList.remove('show');
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   ◆ BACKEND HOOK 1 — ML ENSEMBLE PREDICTION
+   ─────────────────────────────────────────────────────────────────
+   Replace the `mockPredictLocally()` call inside `runAssessment()`
+   with a fetch() to your Flask/FastAPI endpoint, e.g.:
+
+     POST /api/predict
+     Body: { age, glucose, bmi, hypertension, heart_disease }
+     Expected JSON response:
+     {
+       "ensemble_prob": 0.82,
+       "risk_label":    "HIGH",        // "HIGH" | "MODERATE" | "LOW"
+       "svm_prob":      0.79,
+       "dt_prob":       0.85,
+       "knn_prob":      0.82
+     }
+
+   Flask endpoint skeleton (app.py):
+   ─────────────────────────────────
+     @app.route('/api/predict', methods=['POST'])
+     def predict():
+         data = request.get_json()
+         features = np.array([[
+             data['age'], data['glucose'], data['bmi'],
+             int(data['hypertension']), int(data['heart_disease'])
+         ]])
+         svm_p  = svm_model.predict_proba(features)[0][1]
+         dt_p   = dt_model.predict_proba(features)[0][1]
+         knn_p  = knn_model.predict_proba(features)[0][1]
+         ens_p  = (svm_p + dt_p + knn_p) / 3
+         label  = 'HIGH' if ens_p >= 0.65 else 'MODERATE' if ens_p >= 0.35 else 'LOW'
+         return jsonify({
+             'ensemble_prob': round(float(ens_p), 4),
+             'risk_label':    label,
+             'svm_prob':      round(float(svm_p), 4),
+             'dt_prob':       round(float(dt_p),  4),
+             'knn_prob':      round(float(knn_p), 4)
+         })
+   ═══════════════════════════════════════════════════════════════════ */
+async function callPredictAPI(payload) {
+  const res = await fetch('/api/predict', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) throw new Error(`Prediction API error: ${res.status}`);
+  return await res.json();
+}
+
+/* ── LOCAL MOCK (delete once real API is wired) ───────────────────── */
+function mockPredictLocally({ age, glucose, bmi, hypertension, heart_disease }) {
+  const clamp = (v, mn, mx) => Math.min(Math.max(v, mn), mx);
+  let b = 0;
+  b += Math.min(age / 100, 1)          * 0.40;
+  b += Math.min((glucose - 50) / 250, 1) * 0.25;
+  b += Math.min((bmi - 10) / 50, 1)   * 0.15;
+  b += hypertension   ? 0.12 : 0;
+  b += heart_disease  ? 0.10 : 0;
+  const noise = () => (Math.random() - 0.5) * 0.06;
+  const ep = clamp(b + noise(), 0.02, 0.98);
+  return {
+    ensemble_prob: +ep.toFixed(4),
+    risk_label:    ep >= 0.65 ? 'HIGH' : ep >= 0.35 ? 'MODERATE' : 'LOW',
+    svm_prob:  +clamp(ep + noise() * 2, 0.01, 0.99).toFixed(4),
+    dt_prob:   +clamp(ep + noise() * 2.5, 0.01, 0.99).toFixed(4),
+    knn_prob:  +clamp(ep + noise() * 1.5, 0.01, 0.99).toFixed(4)
+  };
+}
+
+/* ── RUN ASSESSMENT ───────────────────────────────────────────────── */
+async function runAssessment() {
+  const btn = document.getElementById('run-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Running ensemble…';
+  showLoading('Running ensemble pipeline…');
+
+  const payload = {
+    age:           +document.getElementById('age').value,
+    glucose:       +document.getElementById('glucose').value,
+    bmi:           +document.getElementById('bmi').value,
+    hypertension:  appState.ht === 'yes',
+    heart_disease: appState.hd === 'yes'
+  };
+
+  try {
+    // ◆ BACKEND HOOK 1 — calls /api/predict (see comment above)
+    const result = await callPredictAPI(payload);
+    appState.riskResult = result;
+    appState.assessed   = true;
+    renderResults(result);
+    updateContextStrip(result);
+    injectContextMessage(result);
+    showToast('✓ Assessment complete');
+  } catch (err) {
+    showToast('⚠ Prediction API error: ' + err.message);
+    console.error('[StrokeRisk] Predict error:', err);
+  } finally {
+    hideLoading();
+    btn.disabled = false;
+    btn.innerHTML = '⚡ Run Stroke Risk Assessment';
+  }
+}
+
+/* ── RENDER RESULTS ───────────────────────────────────────────────── */
+function renderResults(r) {
+  const pct = Math.round(r.ensemble_prob * 100);
+  const alertCfg = {
+    HIGH:     { cls: 'alert-high', icon: '⚠', msg: `Immediate clinical evaluation recommended. Ensemble confidence: ${pct}%` },
+    MODERATE: { cls: 'alert-mod',  icon: '⚡', msg: `Lifestyle intervention and monitoring advised. Ensemble confidence: ${pct}%` },
+    LOW:      { cls: 'alert-low',  icon: '✔', msg: `Routine preventive care recommended. Ensemble confidence: ${pct}%` }
+  };
+
+  document.getElementById('prob-val').textContent = pct + '%';
+  const sub = document.getElementById('prob-sub');
+  sub.textContent = r.risk_label + ' RISK';
+  sub.style.color = riskColor(r.ensemble_prob);
+
+  const a = alertCfg[r.risk_label];
+  const alert = document.getElementById('result-alert');
+  alert.className = 'alert ' + a.cls;
+  alert.innerHTML = `<strong>${a.icon} ${r.risk_label} RISK</strong> — ${a.msg}`;
+
+  setBar('svm-bar', 'svm-pct', r.svm_prob);
+  setBar('dt-bar',  'dt-pct',  r.dt_prob);
+  setBar('knn-bar', 'knn-pct', r.knn_prob);
+
+  document.getElementById('results').classList.add('show');
+}
+
+/* ── CONTEXT STRIP (right pane header) ───────────────────────────── */
+function updateContextStrip(r) {
+  const pct = Math.round(r.ensemble_prob * 100);
+  const colorMap = { HIGH: 'var(--clr-high)', MODERATE: 'var(--clr-mod)', LOW: 'var(--clr-low)' };
+  const strip = document.getElementById('ctx-strip');
+  document.getElementById('ctx-strip-txt').innerHTML =
+    `Patient risk context loaded: <strong style="color:${colorMap[r.risk_label]}">`+
+    `${r.risk_label} RISK (${pct}%)</strong> — RAG pipeline has this profile as system context.`;
+  strip.classList.add('show');
+}
+
+/* ── INJECT CONTEXT NOTIFICATION INTO CHAT ───────────────────────── */
+function injectContextMessage(r) {
+  const pct = Math.round(r.ensemble_prob * 100);
+  addBubble('assistant',
+    `🔔 Assessment complete — the ensemble classified this patient as ` +
+    `<strong>${r.risk_label} RISK (${pct}%)</strong>. I now have the full risk profile ` +
+    `loaded as context. Ask me any follow-up questions about the diagnosis or prevention strategy.`
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   ◆ BACKEND HOOK 2 — RAG CHATBOT (LangChain + ChromaDB / FAISS)
+   ─────────────────────────────────────────────────────────────────
+   Replace `callRAGMock()` with a fetch() to your Flask endpoint, e.g.:
+
+     POST /api/chat
+     Body:
+     {
+       "message": "What prevention strategies should I follow?",
+       "history": [{ "role": "user"|"assistant", "content": "..." }, ...],
+       "risk_context": {            ← ML output from left pane
+           "ensemble_prob": 0.82,
+           "risk_label": "HIGH",
+           "svm_prob": 0.79,
+           "dt_prob": 0.85,
+           "knn_prob": 0.82
+       }
+     }
+     Expected JSON response:
+     { "reply": "Here is the retrieved answer from the guidelines…" }
+
+   Flask endpoint skeleton (app.py):
+   ─────────────────────────────────
+     @app.route('/api/chat', methods=['POST'])
+     def chat():
+         data = request.get_json()
+         user_msg     = data['message']
+         history      = data.get('history', [])
+         risk_context = data.get('risk_context', None)
+
+         # ── CONTEXT BRIDGE: inject ML output as system context ────
+         system_ctx = ""
+         if risk_context:
+             system_ctx = (
+                 f"Patient Risk Profile (ML Ensemble):\\n"
+                 f"  Ensemble Probability : {risk_context['ensemble_prob']*100:.1f}%\\n"
+                 f"  Classification       : {risk_context['risk_label']} RISK\\n"
+                 f"  SVM Confidence       : {risk_context['svm_prob']*100:.1f}%\\n"
+                 f"  DT Confidence        : {risk_context['dt_prob']*100:.1f}%\\n"
+                 f"  KNN Confidence       : {risk_context['knn_prob']*100:.1f}%\\n"
+             )
+
+         # ── RAG retrieval ─────────────────────────────────────────
+         retriever = vectorstore.as_retriever(search_kwargs={"k": 4})
+         docs      = retriever.get_relevant_documents(user_msg)
+         ctx_chunks = "\\n\\n".join([d.page_content for d in docs])
+
+         # ── Build final prompt ────────────────────────────────────
+         messages = [SystemMessage(content=system_ctx + "\\n\\nGuidelines:\\n" + ctx_chunks)]
+         for h in history:
+             cls = HumanMessage if h['role'] == 'user' else AIMessage
+             messages.append(cls(content=h['content']))
+         messages.append(HumanMessage(content=user_msg))
+
+         answer = llm(messages)
+         return jsonify({ "reply": answer.content })
+   ═══════════════════════════════════════════════════════════════════ */
+async function callChatAPI(message, history, riskContext) {
+  const res = await fetch('/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message, history, risk_context: riskContext })
+  });
+  if (!res.ok) throw new Error(`Chat API error: ${res.status}`);
+  return await res.json();
+}
+
+/* ── LOCAL MOCK RAG RESPONSES (delete once real API is wired) ───── */
+function getRAGMock(query) {
+  const q = query.toLowerCase();
+  if (/prevent|avoid|reduc|lower.*risk/.test(q)) return `
+    <strong>Prevention strategies (ASA Guidelines 2021):</strong><br><br>
+    1. <strong>Blood pressure control</strong> — Maintain BP &lt;130/80 mmHg.
+       First-line agents: ACE inhibitors and thiazide diuretics.<br>
+    2. <strong>Antiplatelet therapy</strong> — Low-dose aspirin (81 mg/day)
+       for patients with prior TIA or ischemic stroke.<br>
+    3. <strong>Lifestyle modification</strong> — Mediterranean diet,
+       ≥150 min/week moderate aerobic activity, smoking cessation, alcohol moderation.<br>
+    4. <strong>High-intensity statin therapy</strong> — Atorvastatin 40–80 mg
+       for atherosclerotic cardiovascular disease.<br><br>
+    <em style="font-size:11px;opacity:0.6">Source: AHA/ASA Stroke Prevention Guidelines 2021</em>
+  `;
+  if (/glucose|sugar|diabet/.test(q)) return `
+    <strong>Glucose &amp; stroke risk (WHO / ADA):</strong><br><br>
+    Fasting glucose &gt;126 mg/dL (Type 2 Diabetes) increases ischemic stroke risk
+    by <strong>1.5–2×</strong>. Impaired fasting glucose (100–125 mg/dL) = pre-diabetes;
+    warrants lifestyle intervention.<br><br>
+    Target HbA1c for stroke prevention: <strong>&lt;7.0%</strong> (ADA standard).<br><br>
+    <em style="font-size:11px;opacity:0.6">Source: WHO Diabetes Fact Sheet 2023 · ADA Standards of Care 2024</em>
+  `;
+  if (/hyper|blood press|bp/.test(q)) return `
+    <strong>Hypertension management (ASA):</strong><br><br>
+    Sustained hypertension (BP ≥130/80 mmHg) is the <strong>single largest modifiable
+    risk factor</strong> for stroke. First-line therapy: thiazide diuretic, ACE inhibitor,
+    or ARB. Home self-monitoring reduces the white-coat effect and improves adherence.<br><br>
+    <em style="font-size:11px;opacity:0.6">Source: ASA Stroke Prevention Guidelines · Stroke, Vol. 52, 2021</em>
+  `;
+  if (/bmi|weight|obes/.test(q)) return `
+    <strong>BMI &amp; stroke risk (WHO):</strong><br><br>
+    BMI ≥30 (Obesity class I+) is associated with an approximately
+    <strong>22% increased risk</strong> of ischemic stroke, largely mediated through
+    hypertension, insulin resistance, and dyslipidaemia.<br><br>
+    Target: BMI 18.5–24.9. Even a 5–10% reduction in body weight produces clinically
+    meaningful improvements in BP and lipid profiles.<br><br>
+    <em style="font-size:11px;opacity:0.6">Source: WHO Global Health Observatory · Stroke, 2022</em>
+  `;
+  return `
+    <strong>Clinical RAG response:</strong><br><br>
+    Based on retrieved guidelines, individualized risk stratification using the
+    <strong>CHA₂DS₂-VASc score</strong> (for AF patients) or the
+    <strong>Framingham Stroke Risk Profile</strong> (primary prevention) is recommended.<br><br>
+    For the specific clinical parameters in this patient's profile, consultation with
+    a neurologist or vascular medicine specialist is advised.<br><br>
+    <em style="font-size:11px;opacity:0.6">Source: ASA Primary Stroke Prevention Guidelines · Stroke, Vol. 52, 2021</em>
+  `;
+}
+
+/* ── SEND CHAT ────────────────────────────────────────────────────── */
+async function sendChat() {
+  const inp = document.getElementById('chat-input');
+  const msg = inp.value.trim();
+  if (!msg) return;
+  inp.value = '';
+
+  // Append user message to UI and history
+  addBubble('user', msg);
+  chatHistory.push({ role: 'user', content: msg });
+
+  // Show typing indicator
+  const typing = document.getElementById('typing');
+  typing.classList.add('show');
+  scrollChat();
+
+  try {
+    // ◆ BACKEND HOOK 2 — calls /api/chat (see comment above)
+    // appState.riskResult is automatically passed as risk_context
+    const { reply } = await callChatAPI(msg, chatHistory, appState.riskResult);
+    typing.classList.remove('show');
+    addBubble('assistant', reply);
+    chatHistory.push({ role: 'assistant', content: reply });
+  } catch (err) {
+    typing.classList.remove('show');
+    addBubble('assistant', `⚠ Chat API error: ${err.message}. Please check your backend connection.`);
+    console.error('[StrokeRisk] Chat error:', err);
+  }
+}
+
+/* ── ADD CHAT BUBBLE ──────────────────────────────────────────────── */
+function addBubble(role, html) {
+  const win  = document.getElementById('chat-window');
+  const el   = document.createElement('div');
+  el.className = `bubble bubble-${role}`;
+  el.innerHTML = `<div class="bubble-role">${role === 'user' ? 'You' : 'Clinical Assistant'}</div>${html}`;
+  win.appendChild(el);
+  scrollChat();
+}
+
+function scrollChat() {
+  const win = document.getElementById('chat-window');
+  win.scrollTop = win.scrollHeight;
+}
+
+/* ── KEYBOARD SHORTCUT — Enter key in chat ────────────────────────── */
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('chat-input')
+    .addEventListener('keydown', e => { if (e.key === 'Enter') sendChat(); });
+});
+</script>
+
+</body>
+</html>
