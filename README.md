@@ -67,28 +67,12 @@ To mirror formal clinical standards, the main dashboard decoupling differentiate
 
 
 
-⚡ Installation & Execution Guide
-1. Clone the Space & Initialize Dependencies
-Bash
+## ⚡ Installation & Execution Guide
+
+### 1. Clone the Space & Initialize Dependencies
+```bash
 git clone [https://github.com/Misbah-84/stroke-risk-prediction.git](https://github.com/Misbah-84/stroke-risk-prediction.git)
 cd stroke-risk-prediction
 python -m venv venv
 source venv/bin/activate  # On Windows use: venv\Scripts\activate
 pip install -r requirements.txt
-2. Configure Local Environment Variables
-Create a .env file inside the root directory to store your API access token safely:
-
-Code snippet
-GEMINI_API_KEY=your_secure_google_gemini_api_key_here
-3. Build Knowledge Base & Boot Dashboard
-Bash
-python build_rag.py   # Processes clinical documents into Chroma Vector DB
-streamlit run app.py  # Launches the integrated web interface
-🤝 Project Contributors
-This dual-engine clinical software suite was developed and engineered by:
-
-Misbah Ullah
-
-Asjad Ali
-
-M Hamas Khan
