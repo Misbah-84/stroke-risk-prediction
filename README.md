@@ -60,10 +60,13 @@ To mirror formal clinical standards, the main dashboard decoupling differentiate
 │   ├── svc_model.pkl                        # Serialized Support Vector Weights
 │   └── stroke_ensemble_model.pkl            # Final pre-fitted soft-voting model
 ├── data_prep.py                             # Pipeline isolation, scaling, and SMOTE implementation
-├── build_rag.py                             # Recursive text chunking, SHA-256 caching, vector database setup
+├── build_rag.py                             # Recursive text chunking, SHA-256 caching, vector database
 ├── query_rag.py                             # Semantic search matrix orchestration
 ├── app.py                                   # Streamlit/Flask Web UI Application Gateway
 └── README.md                                # Project Documentation
+
+
+
 ⚡ Installation & Execution Guide
 1. Clone the Space & Initialize Dependencies
 Bash
@@ -89,6 +92,3 @@ Misbah Ullah
 Asjad Ali
 
 M Hamas Khan
-
-📄 License
-This system is configured strictly for educational validation, clinical research emulation, and technical evaluation. All medical document grounding maps directly to verified, open-access public wellness guidelines published by the American Stroke Association and WHO.
