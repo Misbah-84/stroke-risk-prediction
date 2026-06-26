@@ -171,13 +171,23 @@ def chat():
         # Format the patient diagnostic context summary if available
         patient_context = "No patient diagnostics context loaded yet."
         if risk_context:
+            ensemble_prob = risk_context.get('ensemble_prob', 0.0)
+            is_healthy = ensemble_prob < 0.50
+            target_label = "Healthy" if is_healthy else "Stroke"
+            
+            ens_conf = (1.0 - ensemble_prob) if is_healthy else ensemble_prob
+            svm_conf = (1.0 - risk_context.get('svm_prob', 0.0)) if is_healthy else risk_context.get('svm_prob', 0.0)
+            dt_conf = (1.0 - risk_context.get('dt_prob', 0.0)) if is_healthy else risk_context.get('dt_prob', 0.0)
+            knn_conf = (1.0 - risk_context.get('knn_prob', 0.0)) if is_healthy else risk_context.get('knn_prob', 0.0)
+
             patient_context = (
                 f"Patient Risk Profile (ML Ensemble):\n"
-                f"  Ensemble Probability : {risk_context.get('ensemble_prob', 0.0) * 100:.1f}%\n"
                 f"  Classification       : {risk_context.get('risk_label', 'UNKNOWN')} RISK\n"
-                f"  SVM Confidence       : {risk_context.get('svm_prob', 0.0) * 100:.1f}%\n"
-                f"  DT Confidence        : {risk_context.get('dt_prob', 0.0) * 100:.1f}%\n"
-                f"  KNN Confidence       : {risk_context.get('knn_prob', 0.0) * 100:.1f}%\n"
+                f"  Predicted Class      : {target_label}\n"
+                f"  Ensemble Confidence  : {ens_conf * 100:.1f}%\n"
+                f"  SVM Confidence       : {svm_conf * 100:.1f}%\n"
+                f"  DT Confidence        : {dt_conf * 100:.1f}%\n"
+                f"  KNN Confidence       : {knn_conf * 100:.1f}%\n"
                 f"  Age                  : {risk_context.get('age', 'N/A')} years\n"
                 f"  Average Glucose Level: {risk_context.get('glucose', 'N/A')} mg/dL\n"
                 f"  Body Mass Index (BMI): {risk_context.get('bmi', 'N/A')}\n"
@@ -186,6 +196,8 @@ def chat():
             )
             
         # Perform similarity search matching query (extracting top 3 medical guidelines chunks)
+        import time
+        t_rag_start = time.time()
         try:
             docs = db.similarity_search(user_message, k=3)
             guidelines_context = "\n\n".join([
@@ -195,6 +207,8 @@ def chat():
         except Exception as e:
             print(f"[RAG RETRIEVAL WARNING] Failed to retrieve from Chroma: {e}")
             guidelines_context = "No guidelines could be retrieved from the database."
+        t_rag_end = time.time()
+        print(f"[TIMING DIAGNOSTIC] Similarity search took {t_rag_end - t_rag_start:.2f} seconds.")
             
         # Build prompt template
         system_instructions = (
@@ -236,6 +250,7 @@ def chat():
                 messages_history.append(AIMessage(content=content))
                 
         # Invoke LangChain RAG pipeline
+        t_llm_start = time.time()
         chain = prompt_template | llm
         response = chain.invoke({
             "diagnostic_context": patient_context,
@@ -243,6 +258,8 @@ def chat():
             "history": messages_history,
             "question": user_message
         })
+        t_llm_end = time.time()
+        print(f"[TIMING DIAGNOSTIC] LLM invocation took {t_llm_end - t_llm_start:.2f} seconds.")
         
         return jsonify({"reply": response.content})
     except Exception as e:
